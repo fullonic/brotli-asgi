@@ -64,27 +64,6 @@ class BrotliResponder:
 
                 await self.send(self.initial_message)
                 await self.send(message)
-            else:
-                # TODO: Add support for streaming
-                # Initial body in streaming Brotli response.
-                headers = MutableHeaders(raw=self.initial_message["headers"])
-                headers["Content-Encoding"] = "br"
-                headers.add_vary_header("Accept-Encoding")
-                del headers["Content-Length"]
-
-                message["body"] = self.br_file(body, quality=self.quality)
-                await self.send(self.initial_message)
-                await self.send(message)
-
-        elif message_type == "http.response.body":
-            # Remaining body in streaming Brotli response.
-            body = message.get("body", b"")
-            more_body = message.get("more_body", False)
-
-            message["body"] = self.br_file(body, quality=self.quality)
-
-            await self.send(message)
-
 
 async def unattached_send(message: Message) -> None:
     raise RuntimeError("send awaitable not set")  # pragma: no cover

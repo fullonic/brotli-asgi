@@ -57,26 +57,3 @@ def test_brotli_ignored_for_small_responses():
     assert "Content-Encoding" not in response.headers
     assert int(response.headers["Content-Length"]) == 2
 
-
-@pytest.mark.skip
-def test_brotli_streaming_response():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware)
-
-    @app.route("/")
-    def homepage(request):
-        async def generator(bytes, count):
-            for index in range(count):
-                yield bytes
-
-        streaming = generator(bytes=b"x" * 400, count=10)
-        breakpoint()
-        return StreamingResponse(streaming, status_code=200)
-
-    client = TestClient(app)
-    response = client.get("/", headers={"accept-encoding": "br"})
-    assert response.status_code == 200
-    assert response.text == "x" * 4000
-    assert response.headers["Content-Encoding"] == "br"
-    assert "Content-Length" not in response.headers
