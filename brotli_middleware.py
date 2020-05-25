@@ -1,6 +1,7 @@
 """AGSI Brotli middleware build on top of startlette."""
 
 import brotli  # type: ignore
+from brotli import Compressor, MODE_GENERIC
 import io
 
 from starlette.datastructures import Headers, MutableHeaders
@@ -8,7 +9,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class BrotliMiddleware:
-    def __init__(self, app: ASGIApp, quality: int = 4, minimum_size: int = 500) -> None:
+    def __init__(self, app: ASGIApp, quality: int = 4, minimum_size: int = 200) -> None:
         self.app = app
         self.quality = quality
         self.minimum_size = minimum_size
@@ -32,8 +33,13 @@ class BrotliResponder:
         self.initial_message = {}  # type: Message
         self.started = False
         self.br_file = brotli.compress
+        # for dealing with streaming brotli files
+        self.br_stream = Compressor(mode=MODE_GENERIC, quality=4, lgwin=22, lgblock=0)
+        self.br_buffer = io.BytesIO()
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:  # noqa
+    async def __call__(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:  # noqa
         self.send = send
         await self.app(scope, receive, self.send_with_brotli)
 
@@ -54,14 +60,12 @@ class BrotliResponder:
                 await self.send(message)
             elif not more_body:
                 # Standard Brotli response.
-                self.br_file(body, quality=self.quality)
                 body = self.br_file(body, quality=self.quality)
                 headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers["Content-Length"] = str(len(body))
                 headers.add_vary_header("Accept-Encoding")
                 message["body"] = body
-
                 await self.send(self.initial_message)
                 await self.send(message)
             else:
@@ -71,8 +75,13 @@ class BrotliResponder:
                 headers["Content-Encoding"] = "br"
                 headers.add_vary_header("Accept-Encoding")
                 del headers["Content-Length"]
+                self.br_buffer.write(
+                    self.br_stream.compress(body) + self.br_stream.flush()
+                )
 
-                message["body"] = self.br_file(body, quality=self.quality)
+                message["body"] = self.br_buffer.getvalue()
+                self.br_buffer.seek(0)
+                self.br_buffer.truncate()
                 await self.send(self.initial_message)
                 await self.send(message)
 
@@ -80,8 +89,13 @@ class BrotliResponder:
             # Remaining body in streaming Brotli response.
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
-
-            message["body"] = self.br_file(body, quality=self.quality)
+            self.br_buffer.write(self.br_stream.compress(body) + self.br_stream.flush())
+            if not more_body:
+                self.br_buffer.write(self.br_stream.finish())
+            message["body"] = self.br_buffer.getvalue()
+            print(len(message["body"]), len(body))
+            self.br_buffer.seek(0)
+            self.br_buffer.truncate()
 
             await self.send(message)
 

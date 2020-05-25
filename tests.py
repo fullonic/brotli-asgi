@@ -2,8 +2,9 @@ import pytest
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse, StreamingResponse
 from starlette.testclient import TestClient
-
+from starlette.middleware.gzip import GZipMiddleware
 from brotli_middleware import BrotliMiddleware
+import brotli
 
 
 def test_brotli_responses():
@@ -58,7 +59,7 @@ def test_brotli_ignored_for_small_responses():
     assert int(response.headers["Content-Length"]) == 2
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_brotli_streaming_response():
     app = Starlette()
 
@@ -67,11 +68,10 @@ def test_brotli_streaming_response():
     @app.route("/")
     def homepage(request):
         async def generator(bytes, count):
-            for index in range(count):
+            for _ in range(count):
                 yield bytes
 
         streaming = generator(bytes=b"x" * 400, count=10)
-        breakpoint()
         return StreamingResponse(streaming, status_code=200)
 
     client = TestClient(app)
