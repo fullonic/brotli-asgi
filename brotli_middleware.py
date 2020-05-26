@@ -1,39 +1,89 @@
-"""AGSI Brotli middleware build on top of startlette."""
+"""AGSI Brotli middleware build on top of starlette.
 
-import brotli  # type: ignore
+Code is based on GZipMiddleware shipped with starlette.
+"""
+
+import enum
 import io
 
+from brotli import MODE_GENERIC, MODE_FONT, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
+class Mode(enum.IntEnum):
+    """Brotli available modes."""
+
+    generic = MODE_GENERIC
+    text = MODE_TEXT
+    font = MODE_FONT
+
+
 class BrotliMiddleware:
-    def __init__(self, app: ASGIApp, quality: int = 4, minimum_size: int = 500) -> None:
+    """Brotli middleware public interface."""
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        quality: int = 4,
+        mode="text",
+        lgwin=22,
+        lgblock=0,
+        minimum_size: int = 400,
+    ) -> None:
         self.app = app
         self.quality = quality
+        self.mode = getattr(Mode, mode)
         self.minimum_size = minimum_size
+        self.lgwin = lgwin
+        self.lgblock = lgblock
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             headers = Headers(scope=scope)
             if "br" in headers.get("Accept-Encoding", ""):
-                responder = BrotliResponder(self.app, self.quality, self.minimum_size)
+                responder = BrotliResponder(
+                    self.app,
+                    self.quality,
+                    self.mode,
+                    self.lgwin,
+                    self.lgblock,
+                    self.minimum_size,
+                )
                 await responder(scope, receive, send)
                 return
         await self.app(scope, receive, send)
 
 
 class BrotliResponder:
-    def __init__(self, app: ASGIApp, quality: int, minimum_size: int) -> None:
+    """Brotli Interface."""
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        quality: int,
+        mode: Mode,
+        lgwin: int,
+        lgblock: int,
+        minimum_size: int,
+    ) -> None:  # noqa
         self.app = app
-        self.minimum_size = minimum_size
         self.quality = quality
+        self.mode = mode
+        self.lgwin = lgwin
+        self.lgblock = lgblock
+        self.minimum_size = minimum_size
         self.send = unattached_send  # type: Send
         self.initial_message = {}  # type: Message
         self.started = False
-        self.br_file = brotli.compress
+        self.br_file = Compressor(
+            quality=self.quality, mode=self.mode, lgwin=self.lgwin, lgblock=self.lgblock
+        )
+        self.br_buffer = io.BytesIO()
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:  # noqa
+    async def __call__(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:  # noqa
         self.send = send
         await self.app(scope, receive, self.send_with_brotli)
 
@@ -42,7 +92,7 @@ class BrotliResponder:
         message_type = message["type"]
         if message_type == "http.response.start":
             # Don't send the initial message until we've determined how to
-            # modify the ougoging headers correctly.
+            # modify the outgoing headers correctly.
             self.initial_message = message
         elif message_type == "http.response.body" and not self.started:
             self.started = True
@@ -54,16 +104,41 @@ class BrotliResponder:
                 await self.send(message)
             elif not more_body:
                 # Standard Brotli response.
-                self.br_file(body, quality=self.quality)
-                body = self.br_file(body, quality=self.quality)
+                body = self.br_file.compress(body) + self.br_file.finish()
                 headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers["Content-Length"] = str(len(body))
                 headers.add_vary_header("Accept-Encoding")
                 message["body"] = body
-
                 await self.send(self.initial_message)
                 await self.send(message)
+            else:
+                # Initial body in streaming Brotli response.
+                headers = MutableHeaders(raw=self.initial_message["headers"])
+                headers["Content-Encoding"] = "br"
+                headers.add_vary_header("Accept-Encoding")
+                del headers["Content-Length"]
+                self.br_buffer.write(self.br_file.compress(body) + self.br_file.flush())
+
+                message["body"] = self.br_buffer.getvalue()
+                self.br_buffer.seek(0)
+                self.br_buffer.truncate()
+                await self.send(self.initial_message)
+                await self.send(message)
+
+        elif message_type == "http.response.body":
+            # Remaining body in streaming Brotli response.
+            body = message.get("body", b"")
+            more_body = message.get("more_body", False)
+            self.br_buffer.write(self.br_file.compress(body) + self.br_file.flush())
+            if not more_body:
+                self.br_buffer.write(self.br_file.finish())
+            message["body"] = self.br_buffer.getvalue()
+            self.br_buffer.seek(0)
+            self.br_buffer.truncate()
+
+            await self.send(message)
+
 
 async def unattached_send(message: Message) -> None:
     raise RuntimeError("send awaitable not set")  # pragma: no cover
