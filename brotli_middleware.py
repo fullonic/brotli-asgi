@@ -3,7 +3,6 @@
 Code is based on GZipMiddleware shipped with starlette.
 """
 
-import enum
 import io
 
 from brotli import MODE_GENERIC, MODE_FONT, MODE_TEXT, Compressor  # type: ignore
@@ -11,7 +10,7 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-class Mode(enum.IntEnum):
+class Mode:
     """Brotli available modes."""
 
     generic = MODE_GENERIC
@@ -26,11 +25,27 @@ class BrotliMiddleware:
         self,
         app: ASGIApp,
         quality: int = 4,
-        mode="text",
-        lgwin=22,
-        lgblock=0,
+        mode: str = "text",
+        lgwin: int = 22,
+        lgblock: int = 0,
         minimum_size: int = 400,
     ) -> None:
+        """
+        Arguments.
+
+        mode: The compression mode can be:
+            generic (default), text (for UTF-8 format text input)
+            or font (for WOFF 2.0).
+        quality: Controls the compression-speed vs compression-
+            density tradeoff. The higher the quality, the slower the compression.
+            Range is 0 to 11.
+        lgwin: Base 2 logarithm of the sliding window size. Range
+            is 10 to 24.
+        lgblock: Base 2 logarithm of the maximum input block size.
+            Range is 16 to 24. If set to 0, the value will be set based on the
+            quality.
+        minimum_size: Only compress responses that are bigger than this value in bytes.
+        """
         self.app = app
         self.quality = quality
         self.mode = getattr(Mode, mode)
