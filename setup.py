@@ -8,7 +8,7 @@ from setuptools import setup  # type: ignore
 
 setup(
     name="brotli_middleware",
-    version="0.1.1",
+    version="0.2",
     url="",
     license="",
     author="Diogo B Freitas",

@@ -119,7 +119,7 @@ class BrotliResponder:
                 await self.send(message)
             elif not more_body:
                 # Standard Brotli response.
-                body = self.br_file.compress(body) + self.br_file.finish()
+                body = self.br_file.process(body) + self.br_file.finish()
                 headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers["Content-Length"] = str(len(body))
@@ -133,7 +133,7 @@ class BrotliResponder:
                 headers["Content-Encoding"] = "br"
                 headers.add_vary_header("Accept-Encoding")
                 del headers["Content-Length"]
-                self.br_buffer.write(self.br_file.compress(body) + self.br_file.flush())
+                self.br_buffer.write(self.br_file.process(body) + self.br_file.flush())
 
                 message["body"] = self.br_buffer.getvalue()
                 self.br_buffer.seek(0)
@@ -145,7 +145,7 @@ class BrotliResponder:
             # Remaining body in streaming Brotli response.
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
-            self.br_buffer.write(self.br_file.compress(body) + self.br_file.flush())
+            self.br_buffer.write(self.br_file.process(body) + self.br_file.flush())
             if not more_body:
                 self.br_buffer.write(self.br_file.finish())
                 message["body"] = self.br_buffer.getvalue()
