@@ -1,5 +1,7 @@
 venv
 __pycache__
+dist
+*.egg-info
 .mypy_cache
 .pytest_cache
 .vscode
