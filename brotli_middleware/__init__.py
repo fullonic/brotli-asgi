@@ -1,1 +1,1 @@
-from brotli_middleware import BrotliMiddleware  # noqa
+from .brotli_middleware import BrotliMiddleware  # noqa

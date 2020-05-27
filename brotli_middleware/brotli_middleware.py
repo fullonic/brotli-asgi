@@ -148,10 +148,13 @@ class BrotliResponder:
             self.br_buffer.write(self.br_file.compress(body) + self.br_file.flush())
             if not more_body:
                 self.br_buffer.write(self.br_file.finish())
+                message["body"] = self.br_buffer.getvalue()
+                self.br_buffer.close()
+                await self.send(message)
+                return
             message["body"] = self.br_buffer.getvalue()
             self.br_buffer.seek(0)
             self.br_buffer.truncate()
-
             await self.send(message)
 
 
