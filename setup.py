@@ -8,9 +8,9 @@ from setuptools import setup  # type: ignore
 
 setup(
     name="brotli_middleware",
-    version="0.2",
-    url="",
-    license="",
+    version="0.3",
+    url="https://github.com/fullonic/brotli_middleware",
+    license="MIT",
     author="Diogo B Freitas",
     author_email="somnium@riseup.net",
     description="A compression AGSI middleware using brotli",
