@@ -4,6 +4,12 @@ Brotli middleware it's a perfect alternative to GZip for both speed and smaller 
 
 It can be use as a drop in replacement to the GZipMiddleware shipped with starlette (see compatibility bellow).
 
+**Installation**
+
+```bash
+pip install brotli-middleware
+```
+
 **A basic example:**
 
 ```python
