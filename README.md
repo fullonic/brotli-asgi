@@ -10,6 +10,12 @@ It can be use as a drop in replacement to the GZipMiddleware shipped with starle
 pip install brotli-middleware
 ```
 
+_(Optional)_ Install the most up to date version of `brotli`:
+
+```bash
+pip install git+https://github.com/google/brotli
+```
+
 **A basic example:**
 
 ```python
