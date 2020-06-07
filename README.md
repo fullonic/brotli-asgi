@@ -18,7 +18,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.middleware import Middleware
 
-from brotli_middleware import BrotliMiddleware
+from brotli_asgi import BrotliMiddleware
 
 async def homepage(request):
     return JSONResponse({"data": "a" * 4000})
@@ -33,7 +33,7 @@ app = Starlette(
 
 ```python
 from fastapi import FastAPI
-from brotli_middleware import BrotliMiddleware
+from brotli_asgi import BrotliMiddleware
 
 app = FastAPI()
 app.add_middleware(BrotliMiddleware)
