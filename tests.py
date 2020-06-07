@@ -8,7 +8,7 @@ from starlette.responses import PlainTextResponse, StreamingResponse, JSONRespon
 from starlette.testclient import TestClient
 from starlette.middleware import Middleware
 
-from brotli_middleware import BrotliMiddleware
+from brotli_asgi import BrotliMiddleware
 
 
 def test_brotli_responses():
