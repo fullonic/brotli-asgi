@@ -2,6 +2,12 @@
 
 `BrotliMiddleware` adds [Brotli](https://github.com/google/brotli) response compression to ASGI applications (Starlette, FastAPI, Quart, etc.). It provides faster and more dense compression than GZip, and can be used as a drop in replacement for the `GZipMiddleware` shipped with Starlette.
 
+**Installation**
+
+```bash
+pip install brotli-middleware
+```
+
 ## Examples
 
 ### Starlette
