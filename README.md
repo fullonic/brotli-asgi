@@ -69,19 +69,21 @@ A simple comparative example using Python `sys.getsizof()` and `timeit`:
 
 ```python
 # ipython console
-import sys
 import gzip
-import brotli
+import sys
 
-text = b"*" * 100_000_000
-%timeit brotli.compress(text, quality=4)
-# 606 ms ± 254 µs per loop (mean ± std. dev. of 7 runs, 1 loop each)
-sys.getsizeof(brotli.compress(text, quality=4))
-# 4761
-%timeit gzip.compress(text, compresslevel=6)
-# 733 ms ± 6.59 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
-sys.getsizeof(gzip.compress(text, compresslevel=6))
-# 97255
+import brotli
+import requests
+
+page = requests.get("https://github.com/fullonic/brotli-asgi").content
+%timeit brotli.compress(page, quality=4)
+# 1.83 ms ± 43 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+sys.getsizeof(brotli.compress(page, quality=4))
+# 20081
+%timeit gzip.compress(page, compresslevel=6)
+# 2.75 ms ± 29.8 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+sys.getsizeof(gzip.compress(page, compresslevel=6))
+# 20640
 ```
 
 ## Compatibility
