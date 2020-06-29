@@ -1,5 +1,5 @@
 starlette==0.13.4
 brotli==1.0.7
-# for testings
+# for testing
 requests==2.23.0
 mypy==0.770
