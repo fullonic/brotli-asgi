@@ -5,17 +5,20 @@ Code is based on GZipMiddleware shipped with starlette.
 
 import io
 
-from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from ._import_resolver import import_brotli
+
+brotli = import_brotli()
 
 
 class Mode:
     """Brotli available modes."""
 
-    generic = MODE_GENERIC
-    text = MODE_TEXT
-    font = MODE_FONT
+    generic = brotli.MODE_GENERIC
+    text = brotli.MODE_TEXT
+    font = brotli.MODE_FONT
 
 
 class BrotliMiddleware:
@@ -91,7 +94,7 @@ class BrotliResponder:
         self.send = unattached_send  # type: Send
         self.initial_message = {}  # type: Message
         self.started = False
-        self.br_file = Compressor(
+        self.br_file = brotli.Compressor(
             quality=self.quality, mode=self.mode, lgwin=self.lgwin, lgblock=self.lgblock
         )
         self.br_buffer = io.BytesIO()
