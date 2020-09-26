@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        brotli-package: [brotli==1.0.7, brotlipy==0.7.0]
         python-version: [3.6, 3.7, 3.8]
 
     steps:
@@ -28,7 +29,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+        pip install ${{ matrix.brotli-package }}
+        pip install starlette==0.13.4
+        pip install requests==2.23.0
+        pip install mypy==0.770
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
