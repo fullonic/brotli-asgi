@@ -9,7 +9,7 @@ from setuptools import setup  # type: ignore
 setup(
     name="brotli-asgi",
     version="0.4",
-    url="https://github.com/fullonic/brotli_middleware",
+    url="https://github.com/fullonic/brotli-asgi",
     license="MIT",
     author="Diogo B Freitas",
     author_email="somnium@riseup.net",
