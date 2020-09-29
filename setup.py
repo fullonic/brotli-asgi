@@ -6,6 +6,11 @@ GZipMiddleware for Starlette or FastAPI.
 
 from setuptools import setup  # type: ignore
 
+extras = {
+    'test_brotli': ['requests==2.23.0', 'mypy==0.770'],
+    'test_brotlipy': ['requests==2.23.0', 'mypy==0.770', 'brotlipy==0.7.0']
+}
+
 setup(
     name="brotli-asgi",
     version="0.4",
@@ -19,6 +24,7 @@ setup(
     python_requires=">=3.6",
     include_package_data=True,
     install_requires=["starlette>=0.13.4", "brotli>=1.0.7"],
+    extras_require=extras,
     platforms="any",
     zip_safe=False,
     classifiers=[
