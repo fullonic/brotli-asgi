@@ -1,11 +1,11 @@
-# brotli-middleware
+# brotli-asgi
 
 `BrotliMiddleware` adds [Brotli](https://github.com/google/brotli) response compression to ASGI applications (Starlette, FastAPI, Quart, etc.). It provides faster and more dense compression than GZip, and can be used as a drop in replacement for the `GZipMiddleware` shipped with Starlette.
 
 **Installation**
 
 ```bash
-pip install brotli-middleware
+pip install brotli-asgi
 ```
 
 ## Examples
@@ -49,7 +49,13 @@ def home() -> dict:
 
 ```python
 app.add_middleware(
-  BrotliMiddleware, quality=4, mode="text", lgwin=22, lgblock=0, minimum_size=400,
+  BrotliMiddleware,
+  quality=4,
+  mode="text",
+  lgwin=22,
+  lgblock=0,
+  minimum_size=400,
+  gzip_fallback=True
 )
 ```
 
@@ -60,6 +66,7 @@ app.add_middleware(
 - _(Optional)_ `lgwin`: Base 2 logarithm of the sliding window size. Range is 10 to 24.
 - _(Optional)_ `lgblock`: Base 2 logarithm of the maximum input block size. Range is 16 to 24. If set to 0, the value will be set based on the quality.
 - _(Optional)_ `minimum_size`: Only compress responses that are bigger than this value in bytes.
+- _(Optional)_ `gzip_fallback`: If `True`, uses gzip encoding if `br` is not in the Accept-Encoding header.
 
 ## Performance
 
