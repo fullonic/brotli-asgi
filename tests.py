@@ -100,3 +100,37 @@ def test_brotli_api_options():
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
     assert response.status_code == 200
+
+
+def test_gzip_fallback():
+    app = Starlette()
+
+    app.add_middleware(BrotliMiddleware, gzip_fallback=True)
+
+    @app.route("/")
+    def homepage(request):
+        return PlainTextResponse("x" * 4000, status_code=200)
+
+    client = TestClient(app)
+    response = client.get("/", headers={"accept-encoding": "gzip"})
+    assert response.status_code == 200
+    assert response.text == "x" * 4000
+    assert response.headers["Content-Encoding"] == "gzip"
+    assert int(response.headers["Content-Length"]) < 4000
+
+
+def test_gzip_fallback_false():
+    app = Starlette()
+
+    app.add_middleware(BrotliMiddleware, gzip_fallback=False)
+
+    @app.route("/")
+    def homepage(request):
+        return PlainTextResponse("x" * 4000, status_code=200)
+
+    client = TestClient(app)
+    response = client.get("/", headers={"accept-encoding": "gzip"})
+    assert response.status_code == 200
+    assert response.text == "x" * 4000
+    assert "Content-Encoding" not in response.headers
+    assert int(response.headers["Content-Length"]) == 4000

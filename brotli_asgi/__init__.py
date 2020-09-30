@@ -7,6 +7,7 @@ import io
 
 from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
+from starlette.middleware.gzip import GZipResponder
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
@@ -29,6 +30,7 @@ class BrotliMiddleware:
         lgwin: int = 22,
         lgblock: int = 0,
         minimum_size: int = 400,
+        gzip_fallback: bool = True,
     ) -> None:
         """
         Arguments.
@@ -45,6 +47,7 @@ class BrotliMiddleware:
             Range is 16 to 24. If set to 0, the value will be set based on the
             quality.
         minimum_size: Only compress responses that are bigger than this value in bytes.
+        gzip_fallback: If True, uses gzip encoding if br is not in the Accept-Encoding header.
         """
         self.app = app
         self.quality = quality
@@ -52,6 +55,7 @@ class BrotliMiddleware:
         self.minimum_size = minimum_size
         self.lgwin = lgwin
         self.lgblock = lgblock
+        self.gzip_fallback = gzip_fallback
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
@@ -65,6 +69,10 @@ class BrotliMiddleware:
                     self.lgblock,
                     self.minimum_size,
                 )
+                await responder(scope, receive, send)
+                return
+            if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
+                responder = GZipResponder(self.app, self.minimum_size)
                 await responder(scope, receive, send)
                 return
         await self.app(scope, receive, send)
