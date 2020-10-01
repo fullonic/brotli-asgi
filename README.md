@@ -1,5 +1,10 @@
 # brotli-asgi
 
+[![Packaging status](https://img.shields.io/pypi/v/brotli-asgi?color=%2334D058&label=pypi%20package)](https://pypi.org/project/brotli-asgi)
+[![CI](https://github.com/fullonic/brotli-asgi/workflows/Tests/badge.svg)](https://github.com/fullonic/brotli-asgi/actions?query=workflow%3ATests)
+
+
+
 `BrotliMiddleware` adds [Brotli](https://github.com/google/brotli) response compression to ASGI applications (Starlette, FastAPI, Quart, etc.). It provides faster and more dense compression than GZip, and can be used as a drop in replacement for the `GZipMiddleware` shipped with Starlette.
 
 **Installation**
