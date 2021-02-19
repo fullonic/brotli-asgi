@@ -13,7 +13,7 @@ extras = {
 
 setup(
     name="brotli-asgi",
-    version="0.4",
+    version="1.1.0",
     url="https://github.com/fullonic/brotli-asgi",
     license="MIT",
     author="Diogo B Freitas",
@@ -33,5 +33,6 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
 )
