@@ -36,7 +36,7 @@ class BrotliMiddleware:
         Arguments.
 
         mode: The compression mode can be:
-            generic (default), text (for UTF-8 format text input)
+            generic, text (*default*. Used for UTF-8 format text input)
             or font (for WOFF 2.0).
         quality: Controls the compression-speed vs compression-
             density tradeoff. The higher the quality, the slower the compression.
