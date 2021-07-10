@@ -100,4 +100,4 @@ sys.getsizeof(gzip.compress(page, compresslevel=6))
 
 ## Compatibility
 
-According to [caniuse.com](https://caniuse.com/#feat=brotli), Brotli is supported by all major browsers with a global use of _94%_.
+According to [caniuse.com](https://caniuse.com/#feat=brotli), Brotli is supported by all major browsers with a global use of over _95%_.
