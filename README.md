@@ -75,7 +75,7 @@ app.add_middleware(
 
 ## Performance
 
-To better understand the benefits of Brotli over GZip, please read the great article written by Akamai team, [Understanding Brotli's Potential](https://blogs.akamai.com/2016/02/understanding-brotlis-potential.html), where detailed information and benchmarks are provided.
+To better understand the benefits of Brotli over GZip, see, [Gzip vs. Brotli: Comparing Compression Techniques](https://www.coralnodes.com/gzip-vs-brotli/), where detailed information and benchmarks are provided.
 
 A simple comparative example using Python `sys.getsizof()` and `timeit`:
 
