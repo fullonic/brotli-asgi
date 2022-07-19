@@ -51,6 +51,7 @@ class BrotliMiddleware:
             quality.
         minimum_size: Only compress responses that are bigger than this value in bytes.
         gzip_fallback: If True, uses gzip encoding if br is not in the Accept-Encoding header.
+        excluded_handlers: List of handlers to be excluded from being compressed.
         """
         self.app = app
         self.quality = quality
