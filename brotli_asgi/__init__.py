@@ -5,7 +5,7 @@ Code is based on GZipMiddleware shipped with starlette.
 
 import io
 import re
-from typing import List, Union
+from typing import List, Union, NoReturn
 
 from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
@@ -34,7 +34,7 @@ class BrotliMiddleware:
         minimum_size: int = 400,
         gzip_fallback: bool = True,
         excluded_handlers: Union[List, None] = None,
-    ) -> None:
+    ) -> NoReturn:
         """
         Arguments.
 
@@ -64,7 +64,7 @@ class BrotliMiddleware:
         else:
             self.excluded_handlers = []
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> NoReturn:
         if self._is_handler_excluded(scope):
             return await self.app(scope, receive, send)
         if scope["type"] == "http":
@@ -103,7 +103,7 @@ class BrotliResponder:
         lgwin: int,
         lgblock: int,
         minimum_size: int,
-    ) -> None:  # noqa
+    ) -> NoReturn:  # noqa
         self.app = app
         self.quality = quality
         self.mode = mode
@@ -120,11 +120,11 @@ class BrotliResponder:
 
     async def __call__(
         self, scope: Scope, receive: Receive, send: Send
-    ) -> None:  # noqa
+    ) -> NoReturn:  # noqa
         self.send = send
         await self.app(scope, receive, self.send_with_brotli)
 
-    async def send_with_brotli(self, message: Message) -> None:
+    async def send_with_brotli(self, message: Message) -> NoReturn:
         """Apply compression using brotli."""
         message_type = message["type"]
         if message_type == "http.response.start":
@@ -193,5 +193,5 @@ class BrotliResponder:
         return self.br_file.compress(body)
 
 
-async def unattached_send(message: Message) -> None:
+async def unattached_send(message: Message) -> NoReturn:
     raise RuntimeError("send awaitable not set")  # pragma: no cover
