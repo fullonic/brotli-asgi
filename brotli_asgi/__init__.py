@@ -66,25 +66,24 @@ class BrotliMiddleware:
             self.excluded_handlers = []
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> NoReturn:
-        if self._is_handler_excluded(scope):
+        if self._is_handler_excluded(scope) or scope["type"] != "http":
             return await self.app(scope, receive, send)
-        if scope["type"] == "http":
-            headers = Headers(scope=scope)
-            if "br" in headers.get("Accept-Encoding", ""):
-                responder = BrotliResponder(
-                    self.app,
-                    self.quality,
-                    self.mode,
-                    self.lgwin,
-                    self.lgblock,
-                    self.minimum_size,
-                )
-                await responder(scope, receive, send)
-                return
-            if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
-                responder = GZipResponder(self.app, self.minimum_size)
-                await responder(scope, receive, send)
-                return
+        headers = Headers(scope=scope)
+        if "br" in headers.get("Accept-Encoding", ""):
+            responder = BrotliResponder(
+                self.app,
+                self.quality,
+                self.mode,
+                self.lgwin,
+                self.lgblock,
+                self.minimum_size,
+            )
+            await responder(scope, receive, send)
+            return
+        if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
+            responder = GZipResponder(self.app, self.minimum_size)
+            await responder(scope, receive, send)
+            return
         await self.app(scope, receive, send)
 
     def _is_handler_excluded(self, scope: Scope) -> bool:
