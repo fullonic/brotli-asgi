@@ -67,7 +67,7 @@ app.add_middleware(
 **Parameters**:
 
 - _(Optional)_ `quality`: Controls the compression speed vs compression density tradeoff. The higher the quality, the slower the compression. Range is 0 to 11.
-- _(Optional)_ `mode`: The compression mode can be: `"generic"`, `"text"` (`Defaul` for UTF-8 format text input) or `"font"` (for WOFF 2.0).
+- _(Optional)_ `mode`: The compression mode can be: `"generic"`, `"text"` (`Default` for UTF-8 format text input) or `"font"` (for WOFF 2.0).
 - _(Optional)_ `lgwin`: Base 2 logarithm of the sliding window size. Range is 10 to 24.
 - _(Optional)_ `lgblock`: Base 2 logarithm of the maximum input block size. Range is 16 to 24. If set to 0, the value will be set based on the quality.
 - _(Optional)_ `minimum_size`: Only compress responses that are bigger than this value in bytes.
@@ -75,7 +75,7 @@ app.add_middleware(
 
 ## Performance
 
-To better understand the benefits of Brotli over GZip, please read the great article written by Akamai team, [Understanding Brotli's Potential](https://blogs.akamai.com/2016/02/understanding-brotlis-potential.html), where detailed information and benchmarks are provided.
+To better understand the benefits of Brotli over GZip, see, [Gzip vs. Brotli: Comparing Compression Techniques](https://www.coralnodes.com/gzip-vs-brotli/), where detailed information and benchmarks are provided.
 
 A simple comparative example using Python `sys.getsizof()` and `timeit`:
 
