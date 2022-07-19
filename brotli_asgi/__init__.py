@@ -4,6 +4,8 @@ Code is based on GZipMiddleware shipped with starlette.
 """
 
 import io
+import re
+from typing import List, Union
 
 from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
@@ -31,6 +33,7 @@ class BrotliMiddleware:
         lgblock: int = 0,
         minimum_size: int = 400,
         gzip_fallback: bool = True,
+        excluded_handlers: Union[List, None] = None,
     ) -> None:
         """
         Arguments.
@@ -56,8 +59,14 @@ class BrotliMiddleware:
         self.lgwin = lgwin
         self.lgblock = lgblock
         self.gzip_fallback = gzip_fallback
+        if excluded_handlers:
+            self.excluded_handlers = [re.compile(path) for path in excluded_handlers]
+        else:
+            self.excluded_handlers = []
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self._is_handler_excluded(scope):
+            return await self.app(scope, receive, send)
         if scope["type"] == "http":
             headers = Headers(scope=scope)
             if "br" in headers.get("Accept-Encoding", ""):
@@ -76,6 +85,11 @@ class BrotliMiddleware:
                 await responder(scope, receive, send)
                 return
         await self.app(scope, receive, send)
+
+    def _is_handler_excluded(self, scope: Scope) -> bool:
+        handler = scope.get("path", "")
+
+        return any(pattern.search(handler) for pattern in self.excluded_handlers)
 
 
 class BrotliResponder:
@@ -173,10 +187,11 @@ class BrotliResponder:
         identical except that the official Google API has Compressor.process
         while the brotlipy API has Compress.compress
         """
-        if hasattr(self.br_file, 'process'):
+        if hasattr(self.br_file, "process"):
             return self.br_file.process(body)
 
         return self.br_file.compress(body)
+
 
 async def unattached_send(message: Message) -> None:
     raise RuntimeError("send awaitable not set")  # pragma: no cover
