@@ -90,7 +90,11 @@ def test_brotli_api_options():
     app = Starlette()
 
     app.add_middleware(
-        BrotliMiddleware, quality=11, mode="text", lgwin=20, lgblock=16,
+        BrotliMiddleware,
+        quality=11,
+        mode="text",
+        lgwin=20,
+        lgblock=16,
     )
 
     @app.route("/")
@@ -130,6 +134,27 @@ def test_gzip_fallback_false():
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "gzip"})
+    assert response.status_code == 200
+    assert response.text == "x" * 4000
+    assert "Content-Encoding" not in response.headers
+    assert int(response.headers["Content-Length"]) == 4000
+
+
+def test_excluded_handlers():
+    app = Starlette()
+
+    app.add_middleware(
+        BrotliMiddleware,
+        excluded_handlers=["/excluded"],
+    )
+
+    @app.route("/excluded")
+    def homepage(request):
+        return PlainTextResponse("x" * 4000, status_code=200)
+
+    client = TestClient(app)
+    response = client.get("/excluded", headers={"accept-encoding": "br"})
+
     assert response.status_code == 200
     assert response.text == "x" * 4000
     assert "Content-Encoding" not in response.headers

@@ -4,6 +4,8 @@ Code is based on GZipMiddleware shipped with starlette.
 """
 
 import io
+import re
+from typing import List, Union, NoReturn
 
 from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
@@ -31,7 +33,8 @@ class BrotliMiddleware:
         lgblock: int = 0,
         minimum_size: int = 400,
         gzip_fallback: bool = True,
-    ) -> None:
+        excluded_handlers: Union[List, None] = None,
+    ) -> NoReturn:
         """
         Arguments.
 
@@ -48,6 +51,7 @@ class BrotliMiddleware:
             quality.
         minimum_size: Only compress responses that are bigger than this value in bytes.
         gzip_fallback: If True, uses gzip encoding if br is not in the Accept-Encoding header.
+        excluded_handlers: List of handlers to be excluded from being compressed.
         """
         self.app = app
         self.quality = quality
@@ -56,26 +60,36 @@ class BrotliMiddleware:
         self.lgwin = lgwin
         self.lgblock = lgblock
         self.gzip_fallback = gzip_fallback
+        if excluded_handlers:
+            self.excluded_handlers = [re.compile(path) for path in excluded_handlers]
+        else:
+            self.excluded_handlers = []
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http":
-            headers = Headers(scope=scope)
-            if "br" in headers.get("Accept-Encoding", ""):
-                responder = BrotliResponder(
-                    self.app,
-                    self.quality,
-                    self.mode,
-                    self.lgwin,
-                    self.lgblock,
-                    self.minimum_size,
-                )
-                await responder(scope, receive, send)
-                return
-            if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
-                responder = GZipResponder(self.app, self.minimum_size)
-                await responder(scope, receive, send)
-                return
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> NoReturn:
+        if self._is_handler_excluded(scope) or scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        headers = Headers(scope=scope)
+        if "br" in headers.get("Accept-Encoding", ""):
+            responder = BrotliResponder(
+                self.app,
+                self.quality,
+                self.mode,
+                self.lgwin,
+                self.lgblock,
+                self.minimum_size,
+            )
+            await responder(scope, receive, send)
+            return
+        if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
+            responder = GZipResponder(self.app, self.minimum_size)
+            await responder(scope, receive, send)
+            return
         await self.app(scope, receive, send)
+
+    def _is_handler_excluded(self, scope: Scope) -> bool:
+        handler = scope.get("path", "")
+
+        return any(pattern.search(handler) for pattern in self.excluded_handlers)
 
 
 class BrotliResponder:
@@ -89,7 +103,7 @@ class BrotliResponder:
         lgwin: int,
         lgblock: int,
         minimum_size: int,
-    ) -> None:  # noqa
+    ) -> NoReturn:  # noqa
         self.app = app
         self.quality = quality
         self.mode = mode
@@ -106,11 +120,11 @@ class BrotliResponder:
 
     async def __call__(
         self, scope: Scope, receive: Receive, send: Send
-    ) -> None:  # noqa
+    ) -> NoReturn:  # noqa
         self.send = send
         await self.app(scope, receive, self.send_with_brotli)
 
-    async def send_with_brotli(self, message: Message) -> None:
+    async def send_with_brotli(self, message: Message) -> NoReturn:
         """Apply compression using brotli."""
         message_type = message["type"]
         if message_type == "http.response.start":
@@ -173,10 +187,11 @@ class BrotliResponder:
         identical except that the official Google API has Compressor.process
         while the brotlipy API has Compress.compress
         """
-        if hasattr(self.br_file, 'process'):
+        if hasattr(self.br_file, "process"):
             return self.br_file.process(body)
 
         return self.br_file.compress(body)
 
-async def unattached_send(message: Message) -> None:
+
+async def unattached_send(message: Message) -> NoReturn:
     raise RuntimeError("send awaitable not set")  # pragma: no cover
