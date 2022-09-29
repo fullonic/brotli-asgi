@@ -2,7 +2,6 @@ anyio==3.6.1
 attrs==22.1.0
 bleach==5.0.1
 Brotli==1.0.9
--e git+https://github.com/fullonic/brotli-asgi.git@41258066a7435441b6995a9418acc6dce16469b4#egg=brotli_asgi
 build==0.8.0
 certifi==2022.9.24
 cffi==1.15.1
@@ -10,6 +9,7 @@ charset-normalizer==2.1.1
 commonmark==0.9.1
 cryptography==38.0.1
 docutils==0.19
+flake8==5.0.4
 h11==0.12.0
 httpcore==0.15.0
 httpx==0.23.0
@@ -19,13 +19,16 @@ iniconfig==1.1.1
 jaraco.classes==3.2.3
 jeepney==0.8.0
 keyring==23.9.3
+mccabe==0.7.0
 more-itertools==8.14.0
 packaging==21.3
 pep517==0.13.0
 pkginfo==1.8.3
 pluggy==1.0.0
 py==1.11.0
+pycodestyle==2.9.1
 pycparser==2.21
+pyflakes==2.5.0
 Pygments==2.13.0
 pyparsing==3.0.9
 pytest==7.1.3
