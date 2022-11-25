@@ -1,14 +1,14 @@
 """A compression AGSI middleware using brotli.
 
-Built using starlette under the hood, it can be used as a drop in replacement to
+Built using starlette under the hood, it can be used as a drop-in replacement to
 GZipMiddleware for Starlette or FastAPI.
 """
 
 from setuptools import setup  # type: ignore
 
 extras = {
-    'test_brotli': ['requests==2.23.0', 'mypy==0.770'],
-    'test_brotlipy': ['requests==2.23.0', 'mypy==0.770', 'brotlipy==0.7.0']
+    'test_brotli': ['requests>=2.23.0', 'mypy>=0.770'],
+    'test_brotlipy': ['requests>=2.23.0', 'mypy>=0.770', 'brotlipy>=0.7.0']
 }
 
 setup(

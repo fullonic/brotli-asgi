@@ -1,10 +1,13 @@
-"""Main test for brotli middleware.
+"""Main tests for brotli middleware.
 
-This tests are the same as the ones from starlette.tests.middleware.test_gzip but using
-brotli insted.
+Some of these tests are the same as the ones from starlette.tests.middleware.test_gzip
+but using brotli instead.
 """
+import gzip
+import io
+
 from starlette.applications import Starlette
-from starlette.responses import PlainTextResponse, StreamingResponse, JSONResponse
+from starlette.responses import PlainTextResponse, StreamingResponse, JSONResponse, Response
 from starlette.testclient import TestClient
 from starlette.middleware import Middleware
 
@@ -25,7 +28,6 @@ def test_brotli_responses():
     assert response.status_code == 200
     assert response.text == "x" * 4000
     assert response.headers["Content-Encoding"] == "br"
-    print(len(response.headers["Content-Length"]))
     assert int(response.headers["Content-Length"]) < 4000
 
 
@@ -159,3 +161,27 @@ def test_excluded_handlers():
     assert response.text == "x" * 4000
     assert "Content-Encoding" not in response.headers
     assert int(response.headers["Content-Length"]) == 4000
+
+
+def test_brotli_avoids_double_encoding():
+    # See https://github.com/encode/starlette/pull/1901
+
+    app = Starlette()
+
+    app.add_middleware(BrotliMiddleware, minimum_size=1)
+
+    @app.route("/")
+    def homepage(request):
+        gzip_buffer = io.BytesIO()
+        gzip_file = gzip.GzipFile(mode="wb", fileobj=gzip_buffer)
+        gzip_file.write(b"hello world" * 200)
+        gzip_file.close()
+        body = gzip_buffer.getvalue()
+        return Response(body, headers={"content-encoding": "gzip", "x-gzipped-content-length-in-test": str(len(body))})
+
+    client = TestClient(app)
+    response = client.get("/", headers={"accept-encoding": "br"})
+    assert response.status_code == 200
+    assert response.text == "hello world" * 200
+    assert response.headers["Content-Encoding"] == "gzip"
+    assert response.headers["Content-Length"] == response.headers["x-gzipped-content-length-in-test"]

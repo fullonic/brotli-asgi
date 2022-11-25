@@ -73,6 +73,11 @@ app.add_middleware(
 - _(Optional)_ `minimum_size`: Only compress responses that are bigger than this value in bytes.
 - _(Optional)_ `gzip_fallback`: If `True`, uses gzip encoding if `br` is not in the Accept-Encoding header.
 
+**Notes**:
+
+- It won't apply Brotli compression on responses that already have a Content-Encoding set, to prevent them from being encoded twice.
+- If the GZip fallback is applied, and the response already had a Content-Encoding set, the double-encoding-prevention will only happen if you're using Starlette `>=0.22.0` (see [the PR](https://github.com/encode/starlette/pull/1901)).
+
 ## Performance
 
 To better understand the benefits of Brotli over GZip, see, [Gzip vs. Brotli: Comparing Compression Techniques](https://www.coralnodes.com/gzip-vs-brotli/), where detailed information and benchmarks are provided.
