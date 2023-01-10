@@ -9,7 +9,6 @@ import io
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse, StreamingResponse, JSONResponse, Response
 from starlette.testclient import TestClient
-from starlette.middleware import Middleware
 
 from brotli_asgi import BrotliMiddleware
 
@@ -177,11 +176,17 @@ def test_brotli_avoids_double_encoding():
         gzip_file.write(b"hello world" * 200)
         gzip_file.close()
         body = gzip_buffer.getvalue()
-        return Response(body, headers={"content-encoding": "gzip", "x-gzipped-content-length-in-test": str(len(body))})
+        return Response(
+            body,
+            headers={
+                "content-encoding": "gzip",
+                "x-gzipped-content-length": str(len(body))
+            }
+        )
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
     assert response.status_code == 200
     assert response.text == "hello world" * 200
     assert response.headers["Content-Encoding"] == "gzip"
-    assert response.headers["Content-Length"] == response.headers["x-gzipped-content-length-in-test"]
+    assert response.headers["Content-Length"] == response.headers["x-gzipped-content-length"]

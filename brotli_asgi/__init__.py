@@ -34,7 +34,7 @@ class BrotliMiddleware:
         minimum_size: int = 400,
         gzip_fallback: bool = True,
         excluded_handlers: Union[List, None] = None,
-    ) -> NoReturn:
+    ) -> None:
         """
         Arguments.
 
@@ -65,12 +65,12 @@ class BrotliMiddleware:
         else:
             self.excluded_handlers = []
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> NoReturn:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if self._is_handler_excluded(scope) or scope["type"] != "http":
             return await self.app(scope, receive, send)
         headers = Headers(scope=scope)
         if "br" in headers.get("Accept-Encoding", ""):
-            responder = BrotliResponder(
+            br_responder = BrotliResponder(
                 self.app,
                 self.quality,
                 self.mode,
@@ -78,11 +78,11 @@ class BrotliMiddleware:
                 self.lgblock,
                 self.minimum_size,
             )
-            await responder(scope, receive, send)
+            await br_responder(scope, receive, send)
             return
         if self.gzip_fallback and "gzip" in headers.get("Accept-Encoding", ""):
-            responder = GZipResponder(self.app, self.minimum_size)
-            await responder(scope, receive, send)
+            gzip_responder = GZipResponder(self.app, self.minimum_size)
+            await gzip_responder(scope, receive, send)
             return
         await self.app(scope, receive, send)
 
@@ -103,7 +103,7 @@ class BrotliResponder:
         lgwin: int,
         lgblock: int,
         minimum_size: int,
-    ) -> NoReturn:  # noqa
+    ) -> None:  # noqa
         self.app = app
         self.quality = quality
         self.mode = mode
@@ -121,11 +121,11 @@ class BrotliResponder:
 
     async def __call__(
         self, scope: Scope, receive: Receive, send: Send
-    ) -> NoReturn:  # noqa
+    ) -> None:  # noqa
         self.send = send
         await self.app(scope, receive, self.send_with_brotli)
 
-    async def send_with_brotli(self, message: Message) -> NoReturn:
+    async def send_with_brotli(self, message: Message) -> None:
         """Apply compression using brotli."""
         message_type = message["type"]
         if message_type == "http.response.start":
