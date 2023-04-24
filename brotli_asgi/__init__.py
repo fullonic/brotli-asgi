@@ -69,7 +69,8 @@ class BrotliMiddleware:
         if self._is_handler_excluded(scope) or scope["type"] != "http":
             return await self.app(scope, receive, send)
         headers = Headers(scope=scope)
-        if "br" in headers.get("Accept-Encoding", ""):
+        if "br" in headers.get("Accept-Encoding", "") and "br" not in response.headers.get("Content-Encoding", ""):
+            # Don't apply Brotli twice
             br_responder = BrotliResponder(
                 self.app,
                 self.quality,
