@@ -147,10 +147,14 @@ class BrotliResponder:
                 # Don't apply Brotli to small outgoing responses.
                 await self.send(self.initial_message)
                 await self.send(message)
+            headers = MutableHeaders(raw=self.initial_message["headers"])
+            if "br" in headers.get("Content-Encoding", ""):
+                # Don't apply Brotli twice.
+                await self.send(self.initial_message)
+                await self.send(message)
             elif not more_body:
                 # Standard Brotli response.
                 body = self._process(body) + self.br_file.finish()
-                headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers["Content-Length"] = str(len(body))
                 headers.add_vary_header("Accept-Encoding")
@@ -159,7 +163,6 @@ class BrotliResponder:
                 await self.send(message)
             else:
                 # Initial body in streaming Brotli response.
-                headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers.add_vary_header("Accept-Encoding")
                 del headers["Content-Length"]
