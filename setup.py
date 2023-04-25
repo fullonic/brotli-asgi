@@ -13,7 +13,7 @@ extras = {
 
 setup(
     name="brotli-asgi",
-    version="1.3.0",
+    version="1.4.0",
     url="https://github.com/fullonic/brotli-asgi",
     license="MIT",
     author="Diogo B Freitas",
@@ -23,7 +23,7 @@ setup(
     packages=["brotli_asgi"],
     python_requires=">=3.7",
     include_package_data=True,
-    install_requires=["starlette>=0.13.4", "brotli>=1.0.7"],
+    install_requires=["starlette>=0.25.0", "brotli>=1.0.9"],
     extras_require=extras,
     platforms="any",
     zip_safe=False,
