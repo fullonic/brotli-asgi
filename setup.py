@@ -13,7 +13,7 @@ extras = {
 
 setup(
     name="brotli-asgi",
-    version="1.5.0",
+    version="1.6.0",
     url="https://github.com/fullonic/brotli-asgi",
     license="MIT",
     author="Diogo B Freitas",
