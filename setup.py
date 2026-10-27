@@ -21,7 +21,7 @@ setup(
     description="A compression AGSI middleware using brotli",
     long_description=__doc__,
     packages=["brotli_asgi"],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     include_package_data=True,
     install_requires=["starlette>=0.25.0", "brotli>=1.0.9"],
     extras_require=extras,
@@ -30,7 +30,6 @@ setup(
     classifiers=[
         "Environment :: Web Environment",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
