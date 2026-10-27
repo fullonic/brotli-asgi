@@ -7,6 +7,7 @@ import gzip
 import io
 
 from starlette.applications import Starlette
+from starlette.routing import Route
 from starlette.responses import PlainTextResponse, StreamingResponse, JSONResponse, Response
 from starlette.testclient import TestClient
 
@@ -14,13 +15,12 @@ from brotli_asgi import BrotliMiddleware
 
 
 def test_brotli_responses():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware)
-
-    @app.route("/")
     def homepage(request):
         return PlainTextResponse("x" * 4000, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
@@ -31,13 +31,12 @@ def test_brotli_responses():
 
 
 def test_brotli_not_in_accept_encoding():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware)
-
-    @app.route("/")
     def homepage(request):
         return PlainTextResponse("x" * 4000, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "identity"})
@@ -48,13 +47,12 @@ def test_brotli_not_in_accept_encoding():
 
 
 def test_brotli_ignored_for_small_responses():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware)
-
-    @app.route("/")
     def homepage(request):
         return PlainTextResponse("OK", status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
@@ -65,11 +63,6 @@ def test_brotli_ignored_for_small_responses():
 
 
 def test_brotli_streaming_response():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware)
-
-    @app.route("/")
     def homepage(request):
         async def generator(bytes, count):
             for _ in range(count):
@@ -77,6 +70,10 @@ def test_brotli_streaming_response():
 
         streaming = generator(bytes=b"x" * 400, count=10)
         return StreamingResponse(streaming, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
@@ -88,7 +85,10 @@ def test_brotli_streaming_response():
 
 def test_brotli_api_options():
     """Tests default values overriding."""
-    app = Starlette()
+    def homepage(request):
+        return JSONResponse({"data": "a" * 4000}, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
 
     app.add_middleware(
         BrotliMiddleware,
@@ -98,23 +98,18 @@ def test_brotli_api_options():
         lgblock=16,
     )
 
-    @app.route("/")
-    def homepage(request):
-        return JSONResponse({"data": "a" * 4000}, status_code=200)
-
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
     assert response.status_code == 200
 
 
 def test_gzip_fallback():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware, gzip_fallback=True)
-
-    @app.route("/")
     def homepage(request):
         return PlainTextResponse("x" * 4000, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware, gzip_fallback=True)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "gzip"})
@@ -125,13 +120,12 @@ def test_gzip_fallback():
 
 
 def test_gzip_fallback_false():
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware, gzip_fallback=False)
-
-    @app.route("/")
     def homepage(request):
         return PlainTextResponse("x" * 4000, status_code=200)
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware, gzip_fallback=False)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "gzip"})
@@ -142,16 +136,15 @@ def test_gzip_fallback_false():
 
 
 def test_excluded_handlers():
-    app = Starlette()
+    def homepage(request):
+        return PlainTextResponse("x" * 4000, status_code=200)
+
+    app = Starlette(routes=[Route("/excluded", homepage)])
 
     app.add_middleware(
         BrotliMiddleware,
         excluded_handlers=["/excluded"],
     )
-
-    @app.route("/excluded")
-    def homepage(request):
-        return PlainTextResponse("x" * 4000, status_code=200)
 
     client = TestClient(app)
     response = client.get("/excluded", headers={"accept-encoding": "br"})
@@ -165,11 +158,6 @@ def test_excluded_handlers():
 def test_brotli_avoids_double_encoding():
     # See https://github.com/encode/starlette/pull/1901
 
-    app = Starlette()
-
-    app.add_middleware(BrotliMiddleware, minimum_size=1)
-
-    @app.route("/")
     def homepage(request):
         gzip_buffer = io.BytesIO()
         gzip_file = gzip.GzipFile(mode="wb", fileobj=gzip_buffer)
@@ -183,6 +171,10 @@ def test_brotli_avoids_double_encoding():
                 "x-gzipped-content-length": str(len(body))
             }
         )
+
+    app = Starlette(routes=[Route("/", homepage)])
+
+    app.add_middleware(BrotliMiddleware, minimum_size=1)
 
     client = TestClient(app)
     response = client.get("/", headers={"accept-encoding": "br"})
