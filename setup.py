@@ -8,7 +8,7 @@ from setuptools import setup  # type: ignore
 
 extras = {
     'test_brotli': ['requests>=2.23.0', 'mypy>=0.770'],
-    'test_brotlipy': ['requests>=2.23.0', 'mypy>=0.770', 'brotlipy>=0.7.0']
+    'test_brotlicffi': ['requests>=2.23.0', 'mypy>=0.770', 'brotlicffi>=1.2.1.0']
 }
 
 setup(
@@ -23,7 +23,7 @@ setup(
     packages=["brotli_asgi"],
     python_requires=">=3.10",
     include_package_data=True,
-    install_requires=["starlette>=0.25.0", "brotli>=1.0.9"],
+    install_requires=["starlette>=0.25.0", "brotli>=1.2.1"],
     extras_require=extras,
     platforms="any",
     zip_safe=False,

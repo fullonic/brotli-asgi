@@ -7,7 +7,10 @@ import io
 import re
 from typing import List, Union, NoReturn
 
-from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
+try:
+    from brotlicffi import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
+except ImportError:
+    from brotli import MODE_FONT, MODE_GENERIC, MODE_TEXT, Compressor  # type: ignore
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.middleware.gzip import GZipResponder
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -149,7 +152,7 @@ class BrotliResponder:
                 await self.send(message)
             elif not more_body:
                 # Standard Brotli response.
-                body = self._process(body) + self.br_file.finish()
+                body = self.br_file.process(body) + self.br_file.finish()
                 headers = MutableHeaders(raw=self.initial_message["headers"])
                 headers["Content-Encoding"] = "br"
                 headers["Content-Length"] = str(len(body))
@@ -163,7 +166,7 @@ class BrotliResponder:
                 headers["Content-Encoding"] = "br"
                 headers.add_vary_header("Accept-Encoding")
                 del headers["Content-Length"]
-                self.br_buffer.write(self._process(body) + self.br_file.flush())
+                self.br_buffer.write(self.br_file.process(body) + self.br_file.flush())
 
                 message["body"] = self.br_buffer.getvalue()
                 self.br_buffer.seek(0)
@@ -175,7 +178,7 @@ class BrotliResponder:
             # Remaining body in streaming Brotli response.
             body = message.get("body", b"")
             more_body = message.get("more_body", False)
-            self.br_buffer.write(self._process(body) + self.br_file.flush())
+            self.br_buffer.write(self.br_file.process(body) + self.br_file.flush())
             if not more_body:
                 self.br_buffer.write(self.br_file.finish())
                 message["body"] = self.br_buffer.getvalue()
@@ -186,19 +189,6 @@ class BrotliResponder:
             self.br_buffer.seek(0)
             self.br_buffer.truncate()
             await self.send(message)
-
-    def _process(self, body):
-        """Workaround to support both brotli and brotlipy
-
-        Before the official Google brotli repository offered a Python version,
-        there was a separate package to connect to brotli. These APIs are nearly
-        identical except that the official Google API has Compressor.process
-        while the brotlipy API has Compress.compress
-        """
-        if hasattr(self.br_file, "process"):
-            return self.br_file.process(body)
-
-        return self.br_file.compress(body)
 
 
 async def unattached_send(message: Message) -> NoReturn:
